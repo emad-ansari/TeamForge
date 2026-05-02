@@ -10,24 +10,46 @@ import {
 import { UserAvatar, AvatarStack } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import {
-  Plus,
-  MoreHorizontal,
-  MessageSquare,
-  CheckSquare as CheckIcon,
   Calendar,
   Filter,
   LayoutGrid,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  MoreHorizontal,
+  CheckSquare as CheckIcon,
 } from "lucide-react";
-import { TaskModal } from "@/components/TaskModal";
 import { useTaskModal } from "@/contexts/TaskModalContext";
 import { cn } from "@/lib/utils";
 
-const columns: { id: TaskStatus; title: string; color: string; icon: any; bg: string }[] = [
-  { id: "todo", title: "To do", color: "175 100% 50%", icon: CheckIcon, bg: "bg-primary/10" },
-  { id: "in-progress", title: "In progress", color: "35 100% 55%", icon: Clock, bg: "bg-warning/10" },
-  { id: "done", title: "Done", color: "150 100% 50%", icon: CheckCircle2, bg: "bg-success/10" },
+const columns: {
+  id: TaskStatus;
+  title: string;
+  color: string;
+  icon: any;
+  bg: string;
+}[] = [
+  {
+    id: "todo",
+    title: "To do",
+    color: "175 100% 50%",
+    icon: CheckIcon,
+    bg: "bg-primary/10",
+  },
+  {
+    id: "in-progress",
+    title: "In progress",
+    color: "35 100% 55%",
+    icon: Clock,
+    bg: "bg-warning/10",
+  },
+  {
+    id: "done",
+    title: "Done",
+    color: "150 100% 50%",
+    icon: CheckCircle2,
+    bg: "bg-success/10",
+  },
 ];
 
 const ProjectDetails = () => {
@@ -36,7 +58,6 @@ const ProjectDetails = () => {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TaskStatus | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const { openCreateTaskModal } = useTaskModal();
 
   const onDrop = (status: TaskStatus) => {
@@ -59,7 +80,9 @@ const ProjectDetails = () => {
             }}
           >
             <div className="absolute inset-0 bg-white/10 rounded-2xl border border-white/20" />
-            <span className="relative z-10 text-shadow-sm">{project.name.charAt(0)}</span>
+            <span className="relative z-10 text-shadow-sm">
+              {project.name.charAt(0)}
+            </span>
           </div>
           <div>
             <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight text-glow">
@@ -74,12 +97,15 @@ const ProjectDetails = () => {
           <div className="bg-white/5 p-1 rounded-full border border-white/10">
             <AvatarStack members={project.members} size="sm" max={5} />
           </div>
-          <Button variant="outline" className="bg-white/[0.02] border-white/10 hover:bg-white/5 transition-all rounded-xl h-10 font-semibold">
+          <Button
+            variant="outline"
+            className="bg-white/[0.02] border-white/10 hover:bg-white/5 transition-all rounded-xl h-10 font-semibold"
+          >
             <Plus className="h-4 w-4 mr-1.5" />
             Invite
           </Button>
-          <Button 
-            onClick={openCreateTaskModal}
+          <Button
+            onClick={() => openCreateTaskModal()}
             className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow rounded-xl h-10 px-5 font-semibold transition-all"
           >
             <Plus className="h-4 w-4 mr-1.5" />
@@ -89,18 +115,34 @@ const ProjectDetails = () => {
       </div>
 
       <div className="flex items-center gap-2 mb-8 pb-4 border-b border-white/5">
-        <Button variant="ghost" size="sm" className="bg-primary/10 text-primary font-bold hover:bg-primary/20 rounded-lg">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="bg-primary/10 text-primary font-bold hover:bg-primary/20 rounded-lg"
+        >
           <LayoutGrid className="h-4 w-4 mr-2" />
           Board
         </Button>
-        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground font-semibold rounded-lg">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground font-semibold rounded-lg"
+        >
           List
         </Button>
-        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground font-semibold rounded-lg">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground font-semibold rounded-lg"
+        >
           Timeline
         </Button>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" className="bg-white/[0.02] border-white/10 hover:bg-white/5 rounded-lg">
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white/[0.02] border-white/10 hover:bg-white/5 rounded-lg"
+          >
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
@@ -122,29 +164,39 @@ const ProjectDetails = () => {
               onDrop={() => onDrop(col.id)}
               className={cn(
                 "rounded-3xl bg-white/[0.01] border border-white/5 p-4 transition-all min-h-[500px] flex flex-col relative",
-                overCol === col.id && "bg-white/[0.03] ring-1 ring-primary/50 shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]",
+                overCol === col.id &&
+                  "bg-white/[0.03] ring-1 ring-primary/50 shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]",
               )}
             >
               <div className="flex items-center justify-between mb-4 px-1 relative z-10">
                 <div className="flex items-center gap-2.5">
                   <div className={`p-1.5 rounded-lg ${col.bg}`}>
-                    <col.icon className="h-4 w-4" style={{ color: `hsl(${col.color})` }} />
+                    <col.icon
+                      className="h-4 w-4"
+                      style={{ color: `hsl(${col.color})` }}
+                    />
                   </div>
-                  <h3 className="font-display text-lg font-bold">{col.title}</h3>
+                  <h3 className="font-display text-lg font-bold">
+                    {col.title}
+                  </h3>
                   <span className="text-xs font-semibold text-muted-foreground bg-white/5 px-2 py-0.5 rounded-md border border-white/10">
                     {colTasks.length}
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 hover:bg-white/5 rounded-lg"
-                    onClick={openCreateTaskModal}
+                    onClick={() => openCreateTaskModal()}
                   >
                     <Plus className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5 rounded-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-white/5 rounded-lg"
+                  >
                     <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
@@ -160,7 +212,7 @@ const ProjectDetails = () => {
                       setDraggedId(null);
                       setOverCol(null);
                     }}
-                    onClick={() => setActiveTask(t)}
+                    onClick={() => openCreateTaskModal(t)}
                     className={cn(
                       "w-full text-left rounded-2xl bg-white/[0.02] backdrop-blur-sm border border-white/5 p-4 shadow-bento hover:bg-white/[0.04] hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing group",
                       draggedId === t.id && "opacity-40 rotate-2 scale-95",
@@ -191,30 +243,21 @@ const ProjectDetails = () => {
                           <Calendar className="h-3.5 w-3.5" />
                           {t.dueDate}
                         </span>
-                        {t.subtasks && (
-                          <span className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                            <CheckIcon className="h-3.5 w-3.5" />
-                            {t.subtasks.filter((s) => s.done).length}/
-                            {t.subtasks.length}
-                          </span>
-                        )}
-                        {t.comments && (
-                          <span className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                            <MessageSquare className="h-3.5 w-3.5" />
-                            {t.comments.length}
-                          </span>
-                        )}
                       </div>
-                      <UserAvatar member={t.assignee} size="xs" className="ring-2 ring-transparent group-hover:ring-white/10 transition-all" />
+                      <UserAvatar
+                        member={t.assignee}
+                        size="xs"
+                        className="ring-2 ring-transparent group-hover:ring-white/10 transition-all"
+                      />
                     </div>
                   </button>
                 ))}
-                <button 
-                  onClick={openCreateTaskModal}
+                <button
+                  onClick={() => openCreateTaskModal()}
                   className="w-full rounded-2xl border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] py-4 text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex items-center justify-center gap-2 group"
                 >
                   <div className="p-1 rounded-md bg-white/5 group-hover:bg-primary/20 transition-colors">
-                     <Plus className="h-4 w-4 group-hover:text-primary transition-colors" />
+                    <Plus className="h-4 w-4 group-hover:text-primary transition-colors" />
                   </div>
                   Add task
                 </button>
@@ -223,8 +266,6 @@ const ProjectDetails = () => {
           );
         })}
       </div>
-
-      <TaskModal task={activeTask} onClose={() => setActiveTask(null)} />
     </AppLayout>
   );
 };

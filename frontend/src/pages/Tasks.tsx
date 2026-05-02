@@ -4,7 +4,10 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Calendar, CheckSquare, Clock, CheckCircle2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
+import { useTaskModal } from "@/contexts/TaskModalContext";
+
 const Tasks = () => {
+  const { openCreateTaskModal } = useTaskModal();
   const groups = [
     { label: "To do", icon: CheckSquare, color: "text-primary", bg: "bg-primary/10", items: initialTasks.filter((t) => t.status === "todo") },
     { label: "In progress", icon: Clock, color: "text-warning", bg: "bg-warning/10", items: initialTasks.filter((t) => t.status === "in-progress") },
@@ -33,7 +36,7 @@ const Tasks = () => {
             
             <div className="surface divide-y divide-white/5 shadow-bento">
               {g.items.length > 0 ? g.items.map((t) => (
-                <div key={t.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors group cursor-pointer border-l-2 border-transparent hover:border-primary/50 relative overflow-hidden">
+                <div key={t.id} onClick={() => openCreateTaskModal(t)} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors group cursor-pointer border-l-2 border-transparent hover:border-primary/50 relative overflow-hidden">
                   <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
                   <Checkbox 

@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckSquare, X, Sparkles, Calendar, User, Tag, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { members } from "@/lib/mock-data";
+import { members, type Task } from "@/lib/mock-data";
 import { UserAvatar } from "./UserAvatar";
 import { motion, AnimatePresence } from "motion/react";
+import { useTaskModal } from "@/contexts/TaskModalContext";
 
 const AVAILABLE_LABELS = [
   { name: "Design", color: "246 83% 60%" },
@@ -25,19 +26,39 @@ const STATUS_OPTIONS = [
 ];
 
 export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const { taskToEdit } = useTaskModal();
+  
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState(members[0].id);
   const [status, setStatus] = useState("todo");
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [dueDate, setDueDate] = useState("");
   
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
-  const [isLabelsOpen, setIsLabelsOpen] = useState(false);
+
+  useEffect(() => {
+    if (taskToEdit) {
+      setTitle(taskToEdit.title);
+      setDescription(taskToEdit.description || "");
+      setAssigneeId(taskToEdit.assignee.id);
+      setStatus(taskToEdit.status);
+      setSelectedLabels(taskToEdit.labels.map(l => l.name));
+      setDueDate(taskToEdit.dueDate);
+    } else {
+      resetForm();
+    }
+  }, [taskToEdit, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating task:", { title, description, assigneeId, status, labels: selectedLabels });
+    const taskData = { title, description, assigneeId, status, labels: selectedLabels, dueDate };
+    if (taskToEdit) {
+      console.log("Updating task:", { id: taskToEdit.id, ...taskData });
+    } else {
+      console.log("Creating task:", taskData);
+    }
     onClose();
     resetForm();
   };
@@ -48,6 +69,7 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     setAssigneeId(members[0].id);
     setStatus("todo");
     setSelectedLabels([]);
+    setDueDate("");
   };
 
   const toggleLabel = (labelName: string) => {
@@ -75,10 +97,10 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
               </div>
               <div className="flex flex-col items-start">
                 <DialogTitle className="font-display text-2xl font-bold tracking-tight text-foreground">
-                  New Task
+                  {taskToEdit ? "Edit Task" : "New Task"}
                 </DialogTitle>
                 <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                  Break down your project into actionable steps
+                  {taskToEdit ? "Update task details and progress" : "Break down your project into actionable steps"}
                 </p>
               </div>
             </div>
@@ -107,7 +129,7 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 </Label>
                 <button
                   type="button"
-                  onClick={() => { setIsAssigneeOpen(!isAssigneeOpen); setIsStatusOpen(false); setIsLabelsOpen(false); }}
+                  onClick={() => { setIsAssigneeOpen(!isAssigneeOpen); setIsStatusOpen(false); }}
                   className="w-full flex items-center justify-between h-12 bg-white/[0.02] border border-white/5 hover:border-primary/30 rounded-xl px-4 text-sm font-medium transition-all outline-none"
                 >
                   <div className="flex items-center gap-3">
@@ -149,7 +171,7 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 </Label>
                 <button
                   type="button"
-                  onClick={() => { setIsStatusOpen(!isStatusOpen); setIsAssigneeOpen(false); setIsLabelsOpen(false); }}
+                  onClick={() => { setIsStatusOpen(!isStatusOpen); setIsAssigneeOpen(false); }}
                   className="w-full flex items-center justify-between h-12 bg-white/[0.02] border border-white/5 hover:border-primary/30 rounded-xl px-4 text-sm font-medium transition-all outline-none"
                 >
                   <div className="flex items-center gap-2.5">
@@ -182,6 +204,22 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dueDate" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                Due Date
+              </Label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  id="dueDate"
+                  placeholder="e.g. May 12"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="h-12 pl-11 bg-white/[0.02] border-white/5 focus:border-primary/50 focus:bg-white/[0.04] rounded-xl transition-all"
+                />
               </div>
             </div>
 
@@ -240,7 +278,7 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 className="flex-[1.5] h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-bold tracking-tight"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                Create Task
+                {taskToEdit ? "Update Task" : "Create Task"}
               </Button>
             </div>
           </form>

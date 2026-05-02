@@ -82,7 +82,7 @@ export const AppLayout = ({
         <div className="px-4 py-6">
           {!collapsed ? (
             <Button 
-              onClick={openCreateTaskModal}
+              onClick={() => openCreateTaskModal()}
               className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 h-11 rounded-xl"
             >
               <Plus className="h-4 w-4" /> New task
@@ -90,7 +90,7 @@ export const AppLayout = ({
           ) : (
             <Button
               size="icon"
-              onClick={openCreateTaskModal}
+              onClick={() => openCreateTaskModal()}
               className="w-12 h-12 mx-auto bg-primary hover:bg-primary/90 shadow-glow border-0 rounded-xl flex items-center justify-center"
             >
               <Plus className="h-5 w-5" />
