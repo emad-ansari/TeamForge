@@ -34,8 +34,8 @@ export const AppLayout = ({
   action,
 }: {
   children: React.ReactNode;
-  title?: string;
-  subtitle?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
   action?: React.ReactNode;
 }) => {
   const [collapsed, setCollapsed] = useState(false);
