@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { useTaskModal } from "@/contexts/TaskModalContext";
 
 const kpis = [
   { label: "Total tasks", value: "128", trend: "+12%", icon: ListTodo, color: "175 100% 50%" }, // Cyan
@@ -20,6 +21,7 @@ const chartData = [
 ];
 
 const Dashboard = () => {
+  const { openCreateTaskModal } = useTaskModal();
   return (
     <AppLayout
       title={
@@ -30,7 +32,10 @@ const Dashboard = () => {
       }
       subtitle="Here's what's happening across your workspace today."
       action={
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all">
+        <Button 
+          onClick={openCreateTaskModal}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all"
+        >
           <Plus className="h-4 w-4 mr-2" />New task
         </Button>
       }

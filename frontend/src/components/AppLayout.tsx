@@ -16,8 +16,12 @@ import { UserAvatar } from "./UserAvatar";
 import { members } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./ThemeToggle";
+import { ProjectModal } from "./ProjectModal";
+import { CreateTaskModal } from "./CreateTaskModal";
+import { useProjectModal } from "@/contexts/ProjectModalContext";
+import { useTaskModal } from "@/contexts/TaskModalContext";
+import { Input } from "./ui/input";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -39,6 +43,8 @@ export const AppLayout = ({
   action?: React.ReactNode;
 }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const { isOpen: isProjectModalOpen, openProjectModal, closeProjectModal } = useProjectModal();
+  const { isCreateTaskOpen, openCreateTaskModal, closeCreateTaskModal } = useTaskModal();
   const location = useLocation();
   const me = members[0];
 
@@ -75,12 +81,16 @@ export const AppLayout = ({
 
         <div className="px-4 py-6">
           {!collapsed ? (
-            <Button className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 h-11 rounded-xl">
+            <Button 
+              onClick={openCreateTaskModal}
+              className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 h-11 rounded-xl"
+            >
               <Plus className="h-4 w-4" /> New task
             </Button>
           ) : (
             <Button
               size="icon"
+              onClick={openCreateTaskModal}
               className="w-12 h-12 mx-auto bg-primary hover:bg-primary/90 shadow-glow border-0 rounded-xl flex items-center justify-center"
             >
               <Plus className="h-5 w-5" />
@@ -127,7 +137,10 @@ export const AppLayout = ({
             <div className="pt-8">
               <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center justify-between">
                 Projects
-                <Plus className="w-3.5 h-3.5 hover:text-foreground cursor-pointer transition-colors" />
+                <Plus 
+                  className="w-3.5 h-3.5 hover:text-foreground cursor-pointer transition-colors" 
+                  onClick={openProjectModal}
+                />
               </p>
               <div className="space-y-1">
                 {[
@@ -239,6 +252,14 @@ export const AppLayout = ({
 
         <main className="flex-1 px-8 py-6 relative z-10 animate-slide-up-delayed-1">{children}</main>
       </div>
+      <ProjectModal 
+        isOpen={isProjectModalOpen} 
+        onClose={closeProjectModal} 
+      />
+      <CreateTaskModal
+        isOpen={isCreateTaskOpen}
+        onClose={closeCreateTaskModal}
+      />
     </div>
   );
 };

@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { AvatarStack } from "@/components/UserAvatar";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
+import { useProjectModal } from "@/contexts/ProjectModalContext";
 
 const Projects = () => {
+  const { openProjectModal } = useProjectModal();
   return (
     <AppLayout
       title={
@@ -18,7 +20,10 @@ const Projects = () => {
       }
       subtitle="Organize, track and ship work across your team."
       action={
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all">
+        <Button 
+          onClick={openProjectModal}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all"
+        >
           <Plus className="h-4 w-4 mr-2" />Create project
         </Button>
       }
@@ -73,7 +78,10 @@ const Projects = () => {
           );
         })}
 
-        <button className="surface p-6 border-dashed border-2 border-white/10 flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all min-h-[280px] bg-transparent hover:bg-white/[0.02] group">
+        <button 
+          onClick={openProjectModal}
+          className="surface p-6 border-dashed border-2 border-white/10 flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all min-h-[280px] bg-transparent hover:bg-white/[0.02] group"
+        >
           <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/5 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,255,255,0.2)]">
             <Plus className="h-6 w-6 group-hover:text-primary transition-colors" />
           </div>

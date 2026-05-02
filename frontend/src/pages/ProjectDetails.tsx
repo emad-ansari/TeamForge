@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { TaskModal } from "@/components/TaskModal";
+import { useTaskModal } from "@/contexts/TaskModalContext";
 import { cn } from "@/lib/utils";
 
 const columns: { id: TaskStatus; title: string; color: string; icon: any; bg: string }[] = [
@@ -36,6 +37,7 @@ const ProjectDetails = () => {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TaskStatus | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const { openCreateTaskModal } = useTaskModal();
 
   const onDrop = (status: TaskStatus) => {
     if (!draggedId) return;
@@ -76,7 +78,10 @@ const ProjectDetails = () => {
             <Plus className="h-4 w-4 mr-1.5" />
             Invite
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow rounded-xl h-10 px-5 font-semibold transition-all">
+          <Button 
+            onClick={openCreateTaskModal}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow rounded-xl h-10 px-5 font-semibold transition-all"
+          >
             <Plus className="h-4 w-4 mr-1.5" />
             Add task
           </Button>
@@ -131,7 +136,12 @@ const ProjectDetails = () => {
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5 rounded-lg">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 hover:bg-white/5 rounded-lg"
+                    onClick={openCreateTaskModal}
+                  >
                     <Plus className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5 rounded-lg">
@@ -199,7 +209,10 @@ const ProjectDetails = () => {
                     </div>
                   </button>
                 ))}
-                <button className="w-full rounded-2xl border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] py-4 text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex items-center justify-center gap-2 group">
+                <button 
+                  onClick={openCreateTaskModal}
+                  className="w-full rounded-2xl border-2 border-dashed border-white/10 bg-transparent hover:bg-white/[0.02] py-4 text-sm font-semibold text-muted-foreground hover:text-primary hover:border-primary/40 transition-all flex items-center justify-center gap-2 group"
+                >
                   <div className="p-1 rounded-md bg-white/5 group-hover:bg-primary/20 transition-colors">
                      <Plus className="h-4 w-4 group-hover:text-primary transition-colors" />
                   </div>

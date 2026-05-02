@@ -14,6 +14,9 @@ import Settings from "./pages/Settings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { Toaster } from "sonner";
 
+import { ProjectModalProvider } from "./contexts/ProjectModalContext.tsx";
+import { TaskModalProvider } from "./contexts/TaskModalContext.tsx";
+
 // const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,8 +24,10 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
+      <TaskModalProvider>
+        <ProjectModalProvider>
+          <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -34,7 +39,9 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+        </ProjectModalProvider>
+      </TaskModalProvider>
     </TooltipProvider>
   // </QueryClientProvider>
 );
