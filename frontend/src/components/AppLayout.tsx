@@ -23,11 +23,10 @@ import { useProjectModal } from "@/contexts/ProjectModalContext";
 import { useTaskModal } from "@/contexts/TaskModalContext";
 import { Input } from "./ui/input";
 
-const nav = [
+const globalNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/projects", label: "Projects", icon: FolderKanban },
   { to: "/tasks", label: "My Tasks", icon: CheckSquare },
-  { to: "/team", label: "Team", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -47,6 +46,18 @@ export const AppLayout = ({
   const { isCreateTaskOpen, openCreateTaskModal, closeCreateTaskModal } = useTaskModal();
   const location = useLocation();
   const me = members[0];
+
+  const projectMatch = location.pathname.match(/\/projects\/([^/]+)/);
+  const projectId = projectMatch ? projectMatch[1] : null;
+
+  const navItems = projectId 
+    ? [
+        { to: `/projects/${projectId}`, label: "Project Board", icon: LayoutDashboard, end: true },
+        { to: `/projects/${projectId}/tasks`, label: "Project Tasks", icon: CheckSquare },
+        { to: `/projects/${projectId}/team`, label: "Project Team", icon: Users },
+        { to: "/projects", label: "Back to All", icon: ChevronsLeft },
+      ]
+    : globalNav;
 
   return (
     <div className="min-h-screen flex w-full bg-background selection:bg-primary/30 selection:text-primary-foreground">
@@ -104,11 +115,12 @@ export const AppLayout = ({
               Workspace
             </p>
           )}
-          {nav.map((item) => {
-            const active =
-              location.pathname === item.to ||
-              (item.to === "/projects" &&
-                location.pathname.startsWith("/projects"));
+          {navItems.map((item) => {
+            const active = item.to === "/projects" 
+              ? location.pathname === "/projects" 
+              : item.end 
+                ? location.pathname === item.to 
+                : location.pathname.startsWith(item.to);
             return (
               <NavLink
                 key={item.to}
