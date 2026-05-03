@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   CheckSquare,
-  Users,
   Settings,
   Plus,
   Search,
@@ -47,17 +46,7 @@ export const AppLayout = ({
   const location = useLocation();
   const me = members[0];
 
-  const projectMatch = location.pathname.match(/\/projects\/([^/]+)/);
-  const projectId = projectMatch ? projectMatch[1] : null;
-
-  const navItems = projectId 
-    ? [
-        { to: `/projects/${projectId}`, label: "Project Board", icon: LayoutDashboard, end: true },
-        { to: `/projects/${projectId}/tasks`, label: "Project Tasks", icon: CheckSquare },
-        { to: `/projects/${projectId}/team`, label: "Project Team", icon: Users },
-        { to: "/projects", label: "Back to All", icon: ChevronsLeft },
-      ]
-    : globalNav;
+  const navItems = globalNav;
 
   return (
     <div className="min-h-screen flex w-full bg-background selection:bg-primary/30 selection:text-primary-foreground">
@@ -90,25 +79,6 @@ export const AppLayout = ({
           )}
         </div>
 
-        <div className="px-4 py-6">
-          {!collapsed ? (
-            <Button 
-              onClick={() => openCreateTaskModal()}
-              className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 h-11 rounded-xl"
-            >
-              <Plus className="h-4 w-4" /> New task
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              onClick={() => openCreateTaskModal()}
-              className="w-12 h-12 mx-auto bg-primary hover:bg-primary/90 shadow-glow border-0 rounded-xl flex items-center justify-center"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
-          )}
-        </div>
-
         <nav className="flex-1 px-4 space-y-1.5 mt-2">
           {!collapsed && (
             <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -116,11 +86,7 @@ export const AppLayout = ({
             </p>
           )}
           {navItems.map((item) => {
-            const active = item.to === "/projects" 
-              ? location.pathname === "/projects" 
-              : item.end 
-                ? location.pathname === item.to 
-                : location.pathname.startsWith(item.to);
+            const active = location.pathname.startsWith(item.to);
             return (
               <NavLink
                 key={item.to}
@@ -151,7 +117,7 @@ export const AppLayout = ({
                 Projects
                 <Plus 
                   className="w-3.5 h-3.5 hover:text-foreground cursor-pointer transition-colors" 
-                  onClick={openProjectModal}
+                  onClick={() => openProjectModal()}
                 />
               </p>
               <div className="space-y-1">

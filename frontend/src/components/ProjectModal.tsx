@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { FolderKanban, X, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { FolderKanban, X, Sparkles, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProjectModal } from "@/contexts/ProjectModalContext";
 
 const PROJECT_COLORS = [
   "246 83% 60%", // Purple
@@ -17,17 +18,33 @@ const PROJECT_COLORS = [
 ];
 
 export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const { editingProject } = useProjectModal();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedColor, setSelectedColor] = useState(PROJECT_COLORS[0]);
 
+  useEffect(() => {
+    if (editingProject && isOpen) {
+      setName(editingProject.name);
+      setDescription(editingProject.description);
+      setSelectedColor(editingProject.color);
+    } else if (!editingProject && isOpen) {
+      setName("");
+      setDescription("");
+      setSelectedColor(PROJECT_COLORS[0]);
+    }
+  }, [editingProject, isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, we'd call an API here
-    console.log("Creating project:", { name, description, color: selectedColor });
+    console.log(editingProject ? "Updating project:" : "Creating project:", { 
+      id: editingProject?.id,
+      name, 
+      description, 
+      color: selectedColor 
+    });
     onClose();
-    setName("");
-    setDescription("");
   };
 
   return (
@@ -44,7 +61,7 @@ export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
               </div>
               <div className="flex flex-col items-start">
                 <DialogTitle className="font-display text-2xl font-bold tracking-tight text-foreground">
-                  Create Project
+                  {editingProject ? "Update Project" : "Create Project"}
                 </DialogTitle>
                 <p className="text-xs font-medium text-muted-foreground mt-0.5">
                   Launch a new workspace for your team
@@ -121,8 +138,8 @@ export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                 type="submit"
                 className="flex-[1.5] h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-bold tracking-tight"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Launch Project
+                {editingProject ? <Pencil className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                {editingProject ? "Save Changes" : "Launch Project"}
               </Button>
             </div>
           </form>

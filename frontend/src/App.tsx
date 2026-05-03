@@ -9,7 +9,6 @@ import Dashboard from "./pages/Dashboard.tsx";
 import Projects from "./pages/Projects.tsx";
 import ProjectDetails from "./pages/ProjectDetails.tsx";
 import Tasks from "./pages/Tasks.tsx";
-import Team from "./pages/Team.tsx";
 import Settings from "./pages/Settings.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { Toaster } from "sonner";
@@ -34,9 +33,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/projects/:id/tasks" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
-          <Route path="/projects/:id/team" element={<Team />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

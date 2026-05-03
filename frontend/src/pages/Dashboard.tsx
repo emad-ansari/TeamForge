@@ -31,14 +31,6 @@ const Dashboard = () => {
         </div>
       }
       subtitle="Here's what's happening across your workspace today."
-      action={
-        <Button 
-          onClick={() => openCreateTaskModal()}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all"
-        >
-          <Plus className="h-4 w-4 mr-2" />New task
-        </Button>
-      }
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
