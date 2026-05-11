@@ -24,7 +24,7 @@ export const getProjectMembersService = async (
   // 2. Fetch members
   const members = await db
     .select({
-      userId: users.id,
+      id: users.id,
       name: users.name,
       email: users.email,
       avatar: users.avatar,

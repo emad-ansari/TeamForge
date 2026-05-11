@@ -25,6 +25,7 @@ export const signup = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log("request come inside login : ", email, password);
 
     if (!email || !password) {
       return res.status(400).json({ message: "All fields are required" });

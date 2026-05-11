@@ -15,7 +15,7 @@ export const projects = pgTable("projects",{
     name: text("name").notNull(),
     description: text("description").notNull(),
     status: text("status").default("active").notNull(),
-    themeColor: text("theme_color").default("#fff").notNull(),
+    themeColor: text("theme_color").default("246 83% 60%").notNull(),
     createdBy: uuid("created_by").notNull().references(() => users.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull()
@@ -28,7 +28,7 @@ export const tasks = pgTable("tasks",{
     status: text("status").default("todo").notNull(),
     projectId: uuid("project_id").notNull().references(() => projects.id),
     assigneeId: uuid("assignee_id").references(() => users.id),
-    label: text("Design"),
+    label: text("label"),
     dueDate: timestamp("due_date").notNull(),
     createdBy: uuid("created_by").notNull().references(() => users.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),

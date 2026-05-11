@@ -32,7 +32,7 @@ export const signupService = async (
     })
     .returning();
 
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "7d",
   });
 
@@ -61,14 +61,14 @@ export const loginService = async (email: string, password: string) => {
     throw new Error("Invalid credentials");
   }
 
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
     expiresIn: "7d",
   });
 
   return {
     token,
     user: {
-      id: user.id,
+      userId: user.id,
       name: user.name,
       email: user.email,
       avatar: user.avatar,

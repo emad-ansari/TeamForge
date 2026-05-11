@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -12,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendInviteEmail = async (to: string, link: string) => {
   await transporter.sendMail({
-    from: `"TeamForge" <${process.env.EMAIL_USER}>`,
+    from: `"TeamForge" <${process.env.EMAIL}>`,
     to,
     subject: "You're invited to a project",
     html: `

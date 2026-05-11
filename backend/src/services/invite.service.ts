@@ -1,5 +1,5 @@
 import { db } from "@/db/connection";
-import { projectInvites, projectMembers } from "@/db/schema";
+import { projectInvites, projectMembers, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { sendInviteEmail } from "@/utils/nodemailer";
@@ -24,10 +24,48 @@ export const inviteMemberService = async (
     throw new Error("Only admin can invite");
   }
 
-  // 2. Generate token
+  // 2. Check if user already exists and is a member
+  const [targetUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email));
+
+  if (targetUser) {
+    const [existingMember] = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, targetUser.id)
+        )
+      );
+
+    if (existingMember) {
+      throw new Error("User is already a member of this project");
+    }
+  }
+
+  // 3. Check for existing pending invite
+  const [existingInvite] = await db
+    .select()
+    .from(projectInvites)
+    .where(
+      and(
+        eq(projectInvites.projectId, projectId),
+        eq(projectInvites.email, email),
+        eq(projectInvites.status, "pending")
+      )
+    );
+
+  if (existingInvite) {
+    throw new Error("A pending invitation already exists for this email");
+  }
+
+  // 4. Generate token
   const token = crypto.randomBytes(32).toString("hex");
 
-  // 3. Create invite
+  // 5. Create invite
   const [invite] = await db
     .insert(projectInvites)
     .values({
@@ -54,7 +92,7 @@ export const acceptInviteService = async (
 ) => {
 
   return await db.transaction(async (tx) => {
-
+    console.log('accept invite service')
     // 1. Find invite
     const [invite] = await tx
       .select()
@@ -75,14 +113,31 @@ export const acceptInviteService = async (
       throw new Error("Invite expired");
     }
 
-    // 4. Add user to project
+    // 4. Check if already a member
+    const [existingMember] = await tx
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, invite.projectId),
+          eq(projectMembers.userId, userId)
+        )
+      );
+
+    if (existingMember) {
+      // If already a member, we can just mark the invite as accepted and return success
+      // Or throw an error. Throwing an error is safer to let the user know they are already in.
+      throw new Error("You are already a member of this project");
+    }
+
+    // 5. Add user to project
     await tx.insert(projectMembers).values({
       userId,
       projectId: invite.projectId,
       role: invite.role,
     });
 
-    // 5. Update invite status
+    // 6. Update invite status
     await tx
       .update(projectInvites)
       .set({ status: "accepted" })

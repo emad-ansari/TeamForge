@@ -16,6 +16,7 @@ export const createTaskService = async (
   },
 ) => {
   // 1. Check current user is member
+  console.log("control reaches in create task service")
   const [currentUser] = await db
     .select()
     .from(projectMembers)
@@ -65,7 +66,31 @@ export const createTaskService = async (
     })
     .returning();
 
-  return task;
+  // 5. Return with assignee info
+  const [result] = await db
+    .select({
+      id: tasks.id,
+      title: tasks.title,
+      description: tasks.description,
+      status: tasks.status,
+      dueDate: tasks.dueDate,
+      label: tasks.label,
+      assigneeId: tasks.assigneeId,
+      projectId: tasks.projectId,
+      createdBy: tasks.createdBy,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      assignee: {
+        id: users.id,
+        name: users.name,
+        avatar: users.avatar,
+      },
+    })
+    .from(tasks)
+    .innerJoin(users, eq(tasks.assigneeId, users.id))
+    .where(eq(tasks.id, task.id));
+
+  return result;
 };
 
 export const getTasksByProjectService = async (
@@ -95,6 +120,8 @@ export const getTasksByProjectService = async (
       description: tasks.description,
       status: tasks.status,
       dueDate: tasks.dueDate,
+      label: tasks.label,
+      assigneeId: tasks.assigneeId,
 
       assignee: {
         id: users.id,
@@ -189,7 +216,31 @@ export const updateTaskService = async (
     .where(eq(tasks.id, taskId))
     .returning();
 
-  return updatedTask;
+  // 7. Return with assignee info
+  const [result] = await db
+    .select({
+      id: tasks.id,
+      title: tasks.title,
+      description: tasks.description,
+      status: tasks.status,
+      dueDate: tasks.dueDate,
+      label: tasks.label,
+      assigneeId: tasks.assigneeId,
+      projectId: tasks.projectId,
+      createdBy: tasks.createdBy,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      assignee: {
+        id: users.id,
+        name: users.name,
+        avatar: users.avatar,
+      },
+    })
+    .from(tasks)
+    .innerJoin(users, eq(tasks.assigneeId, users.id))
+    .where(eq(tasks.id, updatedTask.id));
+
+  return result;
 };
 
 // delete task
@@ -252,9 +303,15 @@ export const getMyTasksService = async (currentUserId: string) => {
         id: projects.id,
         name: projects.name,
       },
+      assignee: {
+        id: users.id,
+        name: users.name,
+        avatar: users.avatar,
+      },
     })
     .from(tasks)
     .leftJoin(projects, eq(tasks.projectId, projects.id))
+    .innerJoin(users, eq(tasks.assigneeId, users.id))
     .where(eq(tasks.assigneeId, currentUserId));
 
   return result;

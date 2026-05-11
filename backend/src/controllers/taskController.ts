@@ -13,12 +13,15 @@ export const createTask = async (req: AuthRequest, res: Response) => {
   try {
     const currentUserId = req.user!.userId;
     const { projectId } = req.params;
+    console.log('projectId: ', projectId);
+    console.log('currentUserId: ', currentUserId);
 
     const task = await createTaskService(
       projectId as string,
       currentUserId,
       req.body,
     );
+    
     await createActivityLog({
       action: "TASK_CREATED",
       message: `created task "${task.title}"`,
@@ -32,8 +35,15 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       task,
     });
   } catch (error: any) {
+    console.error("[createTask Error]:", error);
+    
+    // Check for specific database errors if needed
+    if (error.code === "23503") { // Foreign key violation
+      return res.status(400).json({ message: "Invalid project or user reference" });
+    }
+
     return res.status(400).json({
-      message: error.message,
+      message: error.message || "Failed to create task",
     });
   }
 };
@@ -83,8 +93,9 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
       task: updatedTask,
     });
   } catch (error: any) {
+    console.error("[updateTask Error]:", error);
     return res.status(400).json({
-      message: error.message,
+      message: error.message || "Failed to update task",
     });
   }
 };

@@ -6,6 +6,7 @@ export const createProject = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { name, description, themeColor } = req.body;
+    console.log("userId: ", userId);
 
     if (!name || !description) {
       return res

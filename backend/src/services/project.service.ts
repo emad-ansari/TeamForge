@@ -9,6 +9,7 @@ export const createProjectService = async (
   themeColor: string,
 ) => {
   // 1. Create project
+  console.log("create project service get's called with userId:", userId)
   const [project] = await db
     .insert(projects)
     .values({
@@ -18,7 +19,7 @@ export const createProjectService = async (
       themeColor: themeColor,
     })
     .returning();
-
+    console.log("project created successfully : ", project);
   // 2. Add creator as ADMIN
   await db.insert(projectMembers).values({
     userId,
