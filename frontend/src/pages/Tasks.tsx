@@ -1,17 +1,24 @@
 import { AppLayout } from "@/components/AppLayout";
-import { initialTasks } from "@/lib/mock-data";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Calendar, CheckSquare, Clock, CheckCircle2 } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { useEffect } from "react";
+import { useTaskStore } from "@/store/taskStore";
 import { useTaskModal } from "@/contexts/TaskModalContext";
 
 const Tasks = () => {
+  const { tasks, fetchMyTasks, isLoading } = useTaskStore();
   const { openCreateTaskModal } = useTaskModal();
+
+  useEffect(() => {
+    fetchMyTasks();
+  }, []);
+
   const groups = [
-    { label: "To do", icon: CheckSquare, color: "text-primary", bg: "bg-primary/10", items: initialTasks.filter((t) => t.status === "todo") },
-    { label: "In progress", icon: Clock, color: "text-warning", bg: "bg-warning/10", items: initialTasks.filter((t) => t.status === "in-progress") },
-    { label: "Done", icon: CheckCircle2, color: "text-success", bg: "bg-success/10", items: initialTasks.filter((t) => t.status === "done") },
+    { label: "To do", icon: CheckSquare, color: "text-primary", bg: "bg-primary/10", items: tasks.filter((t) => t.status === "todo") },
+    { label: "In progress", icon: Clock, color: "text-warning", bg: "bg-warning/10", items: tasks.filter((t) => t.status === "in-progress") },
+    { label: "Done", icon: CheckCircle2, color: "text-success", bg: "bg-success/10", items: tasks.filter((t) => t.status === "done") },
   ];
   return (
     <AppLayout 
@@ -49,16 +56,26 @@ const Tasks = () => {
                   </p>
                   
                   <div className="flex items-center gap-2 relative z-10">
-                    {t.labels.map((l) => (
-                      <span key={l.name} className="text-[10px] px-2 py-0.5 rounded-md font-bold tracking-wide uppercase border border-current/10" style={{ background: `hsl(${l.color} / 0.1)`, color: `hsl(${l.color})` }}>
-                        {l.name}
+                    <span className="text-[10px] px-2 py-0.5 rounded-md font-bold tracking-wide uppercase border border-white/10 bg-white/5 text-muted-foreground">
+                      {(t as any).project?.name}
+                    </span>
+                    {t.label && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold tracking-wide uppercase border border-current/10" style={{ background: `hsl(246 83% 60% / 0.1)`, color: `hsl(246 83% 60%)` }}>
+                        {t.label}
                       </span>
-                    ))}
+                    )}
                   </div>
                   
                   <span className={`text-xs font-medium flex items-center gap-1.5 w-24 justify-end relative z-10 transition-colors ${t.status === "done" ? "text-muted-foreground/50" : "text-muted-foreground group-hover:text-foreground"}`}>
                     <Calendar className="h-3.5 w-3.5" />
-                    {t.dueDate}
+                    {(() => {
+                      try {
+                        const date = parseISO(t.dueDate);
+                        return isValid(date) ? format(date, "MMM d, yyyy") : "No date";
+                      } catch (e) {
+                        return "No date";
+                      }
+                    })()}
                   </span>
                   
                   <div className="relative z-10 opacity-80 group-hover:opacity-100 transition-opacity ml-2">
@@ -67,7 +84,7 @@ const Tasks = () => {
                 </div>
               )) : (
                 <div className="px-5 py-8 text-center text-muted-foreground/60 text-sm font-medium">
-                  No tasks in this list. You're all caught up!
+                  {isLoading ? "Loading tasks..." : "No tasks in this list. You're all caught up!"}
                 </div>
               )}
             </div>

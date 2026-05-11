@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { useTaskModal } from "@/contexts/TaskModalContext";
+import { useProjectStore } from "@/store/projectStore";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const kpis = [
   { label: "Total tasks", value: "128", trend: "+12%", icon: ListTodo, color: "175 100% 50%" }, // Cyan
@@ -22,6 +25,11 @@ const chartData = [
 
 const Dashboard = () => {
   const { openCreateTaskModal } = useTaskModal();
+  const { projects, isLoading, fetchProjects } = useProjectStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
   return (
     <AppLayout
       title={
@@ -147,24 +155,48 @@ const Dashboard = () => {
             <Link to="/projects" className="text-sm font-medium text-primary hover:text-glow transition-all">All projects</Link>
           </div>
           <div className="space-y-4 relative z-10">
-            {projects.slice(0, 3).map((p) => {
-              const pct = Math.round((p.completedTasks / p.totalTasks) * 100);
-              return (
-                <Link key={p.id} to={`/projects/${p.id}`} className="block group bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-all hover:bg-primary/[0.02]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="h-3 w-3 rounded-md shadow-[0_0_8px_currentColor]" style={{ background: `hsl(${p.color})`, color: `hsl(${p.color})` }} />
-                      <span className="text-sm font-bold group-hover:text-primary transition-colors">{p.name}</span>
+            {isLoading && projects.length === 0 ? (
+              <div className="flex items-center justify-center py-10 opacity-50">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-sm text-muted-foreground">No active projects</p>
+                <Link to="/projects" className="text-xs text-primary hover:underline mt-2 inline-block">Create your first project</Link>
+              </div>
+            ) : (
+              projects.slice(0, 3).map((p) => {
+                const pct = p.progress || 0;
+                const themeColor = p.themeColor || "175 100% 50%";
+                return (
+                  <Link key={p.id} to={`/projects/${p.id}`} className="block group bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-primary/30 transition-all hover:bg-primary/[0.02]">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="h-3 w-3 rounded-md shadow-[0_0_8px_currentColor]" style={{ background: `hsl(${themeColor})`, color: `hsl(${themeColor})` }} />
+                        <span className="text-sm font-bold group-hover:text-primary transition-colors">{p.name}</span>
+                      </div>
+                      <AvatarStack 
+                        members={(p.members || []).map((m, idx) => ({
+                          id: `${p.id}-m-${idx}`,
+                          name: m.name,
+                          initials: m.name.charAt(0).toUpperCase(),
+                          color: themeColor,
+                          avatar: m.avatar || "",
+                          email: "",
+                          role: "Member"
+                        }))} 
+                        size="xs" 
+                        max={3} 
+                      />
                     </div>
-                    <AvatarStack members={p.members} size="xs" max={3} />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Progress value={pct} className="h-2 bg-white/5" />
-                    <span className="text-xs font-semibold text-muted-foreground tabular-nums w-9 text-right">{pct}%</span>
-                  </div>
-                </Link>
-              );
-            })}
+                    <div className="flex items-center gap-3">
+                      <Progress value={pct} className="h-2 bg-white/5" />
+                      <span className="text-xs font-semibold text-muted-foreground tabular-nums w-9 text-right">{pct}%</span>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

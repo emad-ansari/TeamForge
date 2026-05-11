@@ -6,6 +6,9 @@ import { useState } from "react";
 import { Mail, UserPlus, Sparkles, ShieldAlert, Users, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { inviteService } from "@/services/invite.service";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -14,16 +17,28 @@ interface InviteModalProps {
 }
 
 export const InviteModal = ({ isOpen, onClose, projectName }: InviteModalProps) => {
+  const { id: projectId } = useParams();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"Admin" | "Member">("Member");
+  const [role, setRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [isRoleOpen, setIsRoleOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Inviting:", { email, role, projectName });
-    onClose();
-    setEmail("");
-    setRole("Member");
+    if (!projectId) return;
+
+    setIsLoading(true);
+    try {
+      await inviteService.inviteMember(projectId, email, role);
+      toast.success(`Invitation sent to ${email}`);
+      onClose();
+      setEmail("");
+      setRole("MEMBER");
+    } catch (error) {
+      console.error("Failed to send invitation:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -80,11 +95,11 @@ export const InviteModal = ({ isOpen, onClose, projectName }: InviteModalProps) 
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "p-1.5 rounded-lg",
-                    role === "Admin" ? "bg-primary/10 text-primary" : "bg-white/5 text-muted-foreground"
+                    role === "ADMIN" ? "bg-primary/10 text-primary" : "bg-white/5 text-muted-foreground"
                   )}>
-                    {role === "Admin" ? <ShieldAlert className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                    {role === "ADMIN" ? <ShieldAlert className="h-4 w-4" /> : <Users className="h-4 w-4" />}
                   </div>
-                  <span>{role}</span>
+                  <span>{role === "ADMIN" ? "Admin" : "Member"}</span>
                 </div>
                 <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isRoleOpen && "rotate-180")} />
               </button>
@@ -98,8 +113,8 @@ export const InviteModal = ({ isOpen, onClose, projectName }: InviteModalProps) 
                     className="absolute z-50 top-full left-0 w-full mt-2 bg-[#0c0c0e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1"
                   >
                     {[
-                      { id: "Admin", label: "Admin", desc: "Full project control", icon: ShieldAlert },
-                      { id: "Member", label: "Member", desc: "Can view and edit tasks", icon: Users },
+                      { id: "ADMIN", label: "Admin", desc: "Full project control", icon: ShieldAlert },
+                      { id: "MEMBER", label: "Member", desc: "Can view and edit tasks", icon: Users },
                     ].map(r => (
                       <button
                         key={r.id}
@@ -137,9 +152,16 @@ export const InviteModal = ({ isOpen, onClose, projectName }: InviteModalProps) 
               <Button
                 type="submit"
                 className="flex-[1.5] h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-bold tracking-tight"
+                disabled={isLoading}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Send Invitation
+                {isLoading ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Send Invitation
+                  </>
+                )}
               </Button>
             </div>
           </form>

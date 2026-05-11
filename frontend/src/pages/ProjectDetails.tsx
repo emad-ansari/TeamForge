@@ -1,13 +1,12 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import {
-  initialTasks,
-  projects,
-  type Task,
-  type TaskStatus,
-  type Member,
-} from "@/lib/mock-data";
+import { useProjectStore } from "@/store/projectStore";
+import { useTaskStore } from "@/store/taskStore";
+import { useMemberStore } from "@/store/memberStore";
+import type { TaskStatus } from "@/types/task";
+import type { MemberRole } from "@/types/member";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { UserAvatar, AvatarStack } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +27,7 @@ import {
   ShieldAlert,
   ArrowLeftRight,
 } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
 import { useTaskModal } from "@/contexts/TaskModalContext";
 import { cn } from "@/lib/utils";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -66,8 +66,10 @@ const columns: {
 
 const ProjectDetails = () => {
   const { id } = useParams();
-  const project = projects.find((p) => p.id === id) || projects[0];
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { currentProject: project, isLoading: isProjectLoading, fetchProjectById } = useProjectStore();
+  const { tasks, fetchTasks, updateTaskStatus, deleteTask, isLoading: isTasksLoading } = useTaskStore();
+  const { members: projectMembers, fetchMembers, updateRole, removeMember, isLoading: isMembersLoading } = useMemberStore();
+
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TaskStatus | null>(null);
   const { openCreateTaskModal } = useTaskModal();
@@ -76,33 +78,68 @@ const ProjectDetails = () => {
 
   const [activeTab, setActiveTab] = useState<"board" | "team">("board");
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectMembers, setProjectMembers] = useState<Member[]>(project.members);
+
+  useEffect(() => {
+    if (id) {
+      fetchProjectById(id);
+      fetchTasks(id);
+      fetchMembers(id);
+    }
+  }, [id, fetchProjectById, fetchTasks, fetchMembers]);
+
+  const isLoading = isProjectLoading || isTasksLoading || isMembersLoading;
+
+  if (isLoading && !project) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-40 opacity-50">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground font-medium text-lg">Loading project details...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!project) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-40">
+          <h2 className="text-2xl font-bold mb-4">Project not found</h2>
+          <Link to="/projects">
+            <Button>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Projects
+            </Button>
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const filteredMembers = projectMembers.filter(m => 
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    m.email.toLowerCase().includes(searchQuery.toLowerCase())
+    m.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const onDrop = (status: TaskStatus) => {
-    if (!draggedId) return;
-    setTasks((ts) =>
-      ts.map((t) => (t.id === draggedId ? { ...t, status } : t)),
-    );
+    if (!draggedId || !id) return;
+    updateTaskStatus(id, draggedId, status);
     setDraggedId(null);
     setOverCol(null);
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks((ts) => ts.filter((t) => t.id !== taskId));
+    if (!id) return;
+    deleteTask(id, taskId);
     setDeleteTaskId(null);
   };
 
   const handleRemoveMember = (memberId: string) => {
-    setProjectMembers(prev => prev.filter(m => m.id !== memberId));
+    if (!id) return;
+    removeMember(id, memberId);
   };
 
-  const handleChangeRole = (memberId: string, newRole: "Admin" | "Member") => {
-    setProjectMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+  const handleChangeRole = (memberId: string, newRole: MemberRole) => {
+    if (!id) return;
+    updateRole(id, memberId, newRole);
   };
 
   return (
@@ -112,7 +149,7 @@ const ProjectDetails = () => {
           <div
             className="h-16 w-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-white shadow-glow relative"
             style={{
-              background: `linear-gradient(135deg, hsl(${project.color}), hsl(${project.color} / 0.5))`,
+              background: `linear-gradient(135deg, hsl(${project.themeColor || "246 83% 60%"}), hsl(${project.themeColor || "246 83% 60%"} / 0.5))`,
             }}
           >
             <div className="absolute inset-0 bg-white/10 rounded-2xl border border-white/20" />
@@ -131,7 +168,19 @@ const ProjectDetails = () => {
         </div>
         <div className="flex items-center gap-4">
           <div className="bg-white/5 p-1 rounded-full border border-white/10">
-            <AvatarStack members={projectMembers} size="sm" max={5} />
+            <AvatarStack 
+              members={projectMembers.map((m, idx) => ({ 
+                ...m, 
+                id: (m as any).id || `${project.id}-m-${idx}`,
+                initials: m.name.charAt(0).toUpperCase(), 
+                color: project.themeColor || "246 83% 60%",
+                avatar: m.avatar || "",
+                email: (m as any).email || "",
+                role: (m as any).role || "Member"
+              }))} 
+              size="sm" 
+              max={5} 
+            />
           </div>
           <Button
             variant="outline"
@@ -261,20 +310,17 @@ const ProjectDetails = () => {
                             draggedId === t.id && "opacity-40 rotate-2 scale-95",
                           )}
                         >
-                          {t.labels.length > 0 && (
+                          {t.label && (
                             <div className="flex flex-wrap gap-2 mb-3">
-                              {t.labels.map((l) => (
-                                <span
-                                  key={l.name}
-                                  className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-current/10"
-                                  style={{
-                                    background: `hsl(${l.color} / 0.1)`,
-                                    color: `hsl(${l.color})`,
-                                  }}
-                                >
-                                  {l.name}
-                                </span>
-                              ))}
+                              <span
+                                className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-current/10"
+                                style={{
+                                  background: `hsl(246 83% 60% / 0.1)`,
+                                  color: `hsl(246 83% 60%)`,
+                                }}
+                              >
+                                {t.label}
+                              </span>
                             </div>
                           )}
                           <p className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-primary transition-colors pr-8">
@@ -284,7 +330,14 @@ const ProjectDetails = () => {
                             <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
                               <span className="flex items-center gap-1.5 hover:text-foreground transition-colors">
                                 <Calendar className="h-3.5 w-3.5" />
-                                {t.dueDate}
+                                {(() => {
+                                  try {
+                                    const date = parseISO(t.dueDate);
+                                    return isValid(date) ? format(date, "MMM d, yyyy") : "Invalid Date";
+                                  } catch (e) {
+                                    return "Invalid Date";
+                                  }
+                                })()}
                               </span>
                             </div>
                             <UserAvatar
@@ -342,14 +395,25 @@ const ProjectDetails = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {filteredMembers.map((m) => (
+                  {filteredMembers.map((m, idx) => (
                     <tr key={m.id} className="hover:bg-white/[0.03] transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <UserAvatar member={m} size="md" className="ring-2 ring-transparent group-hover:ring-primary/20 transition-all" />
+                          <UserAvatar 
+                            member={{ 
+                              ...m, 
+                              id: (m as any).id || `${project.id}-m-${idx}`,
+                              initials: m.name.charAt(0).toUpperCase(), 
+                              color: project.themeColor || "246 83% 60%",
+                              avatar: m.avatar || "",
+                              email: (m as any).email || "",
+                              role: (m as any).role || "Member"
+                            }} 
+                            size="md" 
+                            className="ring-2 ring-transparent group-hover:ring-primary/20 transition-all" 
+                          />
                           <div>
                             <p className="font-bold text-[15px] group-hover:text-primary transition-colors">{m.name}</p>
-                            <p className="text-[10px] text-muted-foreground md:hidden mt-0.5">{m.email}</p>
                           </div>
                         </div>
                       </td>
@@ -361,7 +425,7 @@ const ProjectDetails = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {m.role === "Admin" ? (
+                          {m.role === "ADMIN" ? (
                             <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
                               <ShieldAlert className="w-3 h-3" />
                               Admin
@@ -379,7 +443,7 @@ const ProjectDetails = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
-                            onClick={() => handleChangeRole(m.id, m.role === "Admin" ? "Member" : "Admin")}
+                            onClick={() => handleChangeRole(m.id, m.role === "ADMIN" ? "MEMBER" : "ADMIN")}
                           >
                             <ArrowLeftRight className="h-3.5 w-3.5" />
                           </Button>

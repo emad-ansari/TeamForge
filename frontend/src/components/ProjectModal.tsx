@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { FolderKanban, X, Sparkles, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProjectModal } from "@/contexts/ProjectModalContext";
+import { useProjectStore } from "@/store/projectStore";
+import { Loader2 } from "lucide-react";
 
 const PROJECT_COLORS = [
   "246 83% 60%", // Purple
@@ -22,12 +24,15 @@ export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedColor, setSelectedColor] = useState(PROJECT_COLORS[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { createProject, updateProject } = useProjectStore();
 
   useEffect(() => {
     if (editingProject && isOpen) {
       setName(editingProject.name);
       setDescription(editingProject.description);
-      setSelectedColor(editingProject.color);
+      setSelectedColor(editingProject.themeColor || PROJECT_COLORS[0]);
     } else if (!editingProject && isOpen) {
       setName("");
       setDescription("");
@@ -35,16 +40,29 @@ export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     }
   }, [editingProject, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we'd call an API here
-    console.log(editingProject ? "Updating project:" : "Creating project:", { 
-      id: editingProject?.id,
-      name, 
-      description, 
-      color: selectedColor 
-    });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      if (editingProject) {
+        await updateProject(editingProject.id, {
+          name,
+          description,
+          themeColor: selectedColor,
+        });
+      } else {
+        await createProject({
+          name,
+          description,
+          themeColor: selectedColor,
+        });
+      }
+      onClose();
+    } catch (error) {
+      console.error("Failed to save project:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -136,9 +154,16 @@ export const ProjectModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: ()
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="flex-[1.5] h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-bold tracking-tight"
               >
-                {editingProject ? <Pencil className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : editingProject ? (
+                  <Pencil className="w-4 h-4 mr-2" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
                 {editingProject ? "Save Changes" : "Launch Project"}
               </Button>
             </div>

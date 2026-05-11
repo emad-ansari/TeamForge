@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { type  Project } from "@/lib/mock-data";
+import { type Project } from "@/types/project";
 
 type ProjectModalContextType = {
   isOpen: boolean;

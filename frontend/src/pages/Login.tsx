@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useAuthStore } from "@/store/authStore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Command } from "lucide-react";
+import { ArrowRight, Command, Loader2 } from "lucide-react";
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -109,10 +112,23 @@ export const AuthShell = ({
 
 const Login = () => {
   const navigate = useNavigate();
-  const submit = (e: React.FormEvent) => {
+  const { login, isLoading } = useAuthStore();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    try {
+      await login(formData);
+      toast.success("Login successful!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid credentials");
+    }
   };
+
   return (
     <AuthShell
       title="Welcome back"
@@ -149,7 +165,8 @@ const Login = () => {
             id="email"
             type="email"
             placeholder="you@company.com"
-            defaultValue="alex@teamforge.io"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="h-11 bg-white/[0.03] border-white/5 focus:border-primary/50 focus:bg-white/[0.05] transition-all rounded-xl"
             required
           />
@@ -173,17 +190,25 @@ const Login = () => {
             id="password"
             type="password"
             placeholder="••••••••"
-            defaultValue="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="h-11 bg-white/[0.03] border-white/5 focus:border-primary/50 focus:bg-white/[0.05] transition-all rounded-xl"
             required
           />
         </div>
         <Button
           type="submit"
+          disabled={isLoading}
           className="group w-full h-11 mt-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-semibold rounded-xl transition-all"
         >
-          Log in to workspace
-          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              Log in to workspace
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
         </Button>
       </form>
     </AuthShell>

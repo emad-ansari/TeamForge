@@ -6,10 +6,16 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { CheckSquare, X, Sparkles, Calendar, User, Tag, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { members, type Task } from "@/lib/mock-data";
+import { members as mockMembers } from "@/lib/mock-data";
+import type { Task, TaskStatus } from "@/types/task";
 import { UserAvatar } from "./UserAvatar";
 import { motion, AnimatePresence } from "motion/react";
 import { useTaskModal } from "@/contexts/TaskModalContext";
+import { useTaskStore } from "@/store/taskStore";
+import { useMemberStore } from "@/store/memberStore";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const AVAILABLE_LABELS = [
   { name: "Design", color: "246 83% 60%" },
@@ -23,61 +29,84 @@ const STATUS_OPTIONS = [
   { id: "todo", label: "To Do", color: "175 100% 50%" },
   { id: "in-progress", label: "In Progress", color: "35 100% 55%" },
   { id: "done", label: "Done", color: "150 100% 50%" },
-];
+] as const;
 
 export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const { taskToEdit } = useTaskModal();
+  const { id: projectId } = useParams();
+  const { taskToEdit, closeCreateTaskModal } = useTaskModal();
+  const { createTask, updateTask } = useTaskStore();
+  const { members } = useMemberStore();
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assigneeId, setAssigneeId] = useState(members[0].id);
-  const [status, setStatus] = useState("todo");
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [assigneeId, setAssigneeId] = useState("");
+  const [status, setStatus] = useState<TaskStatus>("todo");
+  const [label, setLabel] = useState("");
   const [dueDate, setDueDate] = useState("");
   
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (taskToEdit) {
       setTitle(taskToEdit.title);
       setDescription(taskToEdit.description || "");
-      setAssigneeId(taskToEdit.assignee.id);
+      setAssigneeId(taskToEdit.assigneeId);
       setStatus(taskToEdit.status);
-      setSelectedLabels(taskToEdit.labels.map(l => l.name));
-      setDueDate(taskToEdit.dueDate);
+      setLabel(taskToEdit.label || "");
+      // Format date for input if needed, but let's keep it simple for now
+      setDueDate(taskToEdit.dueDate ? new Date(taskToEdit.dueDate).toISOString().split('T')[0] : "");
     } else {
       resetForm();
     }
   }, [taskToEdit, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const taskData = { title, description, assigneeId, status, labels: selectedLabels, dueDate };
-    if (taskToEdit) {
-      console.log("Updating task:", { id: taskToEdit.id, ...taskData });
-    } else {
-      console.log("Creating task:", taskData);
+  useEffect(() => {
+    if (members.length > 0 && !assigneeId) {
+      setAssigneeId(members[0].id);
     }
-    onClose();
-    resetForm();
+  }, [members, assigneeId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectId) return;
+
+    setIsSubmitting(true);
+    const taskData = { 
+      title, 
+      description, 
+      assigneeId, 
+      status, 
+      label, 
+      dueDate: dueDate ? new Date(dueDate).toISOString() : new Date().toISOString() 
+    };
+
+    try {
+      if (taskToEdit) {
+        await updateTask(projectId, taskToEdit.id, taskData);
+        toast.success("Task updated successfully");
+      } else {
+        await createTask(projectId, taskData);
+        toast.success("Task created successfully");
+      }
+      onClose();
+      resetForm();
+    } catch (error: any) {
+      console.error("Failed to save task:", error);
+      toast.error(error.response?.data?.message || "Failed to save task");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setAssigneeId(members[0].id);
+    if (members.length > 0) setAssigneeId(members[0].id);
     setStatus("todo");
-    setSelectedLabels([]);
+    setLabel("");
     setDueDate("");
-  };
-
-  const toggleLabel = (labelName: string) => {
-    setSelectedLabels(prev => 
-      prev.includes(labelName) 
-        ? prev.filter(l => l !== labelName) 
-        : [...prev, labelName]
-    );
   };
 
   const selectedAssignee = members.find(m => m.id === assigneeId) || members[0];
@@ -133,8 +162,8 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                   className="w-full flex items-center justify-between h-12 bg-white/[0.02] border border-white/5 hover:border-primary/30 rounded-xl px-4 text-sm font-medium transition-all outline-none"
                 >
                   <div className="flex items-center gap-3">
-                    <UserAvatar member={selectedAssignee} size="xs" />
-                    <span>{selectedAssignee.name}</span>
+                    {selectedAssignee && <UserAvatar member={selectedAssignee} size="xs" />}
+                    <span>{selectedAssignee?.name || "Select Assignee"}</span>
                   </div>
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isAssigneeOpen && "rotate-180")} />
                 </button>
@@ -215,10 +244,10 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="dueDate"
-                  placeholder="e.g. May 12"
+                  type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="h-12 pl-11 bg-white/[0.02] border-white/5 focus:border-primary/50 focus:bg-white/[0.04] rounded-xl transition-all"
+                  className="h-12 pl-11 bg-white/[0.02] border-white/5 focus:border-primary/50 focus:bg-white/[0.04] rounded-xl transition-all [color-scheme:dark]"
                 />
               </div>
             </div>
@@ -238,24 +267,24 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
             <div className="space-y-3">
               <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                <Tag className="w-3 h-3" /> Labels
+                <Tag className="w-3 h-3" /> Label
               </Label>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_LABELS.map(l => (
                   <button
                     key={l.name}
                     type="button"
-                    onClick={() => toggleLabel(l.name)}
+                    onClick={() => setLabel(l.name)}
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all duration-200",
-                      selectedLabels.includes(l.name) 
+                      label === l.name 
                         ? "border-current shadow-glow-sm scale-105" 
                         : "border-white/5 bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10"
                     )}
                     style={{ 
-                      color: selectedLabels.includes(l.name) ? `hsl(${l.color})` : undefined,
-                      borderColor: selectedLabels.includes(l.name) ? `hsl(${l.color} / 0.5)` : undefined,
-                      backgroundColor: selectedLabels.includes(l.name) ? `hsl(${l.color} / 0.1)` : undefined
+                      color: label === l.name ? `hsl(${l.color})` : undefined,
+                      borderColor: label === l.name ? `hsl(${l.color} / 0.5)` : undefined,
+                      backgroundColor: label === l.name ? `hsl(${l.color} / 0.1)` : undefined
                     }}
                   >
                     {l.name}
@@ -275,10 +304,15 @@ export const CreateTaskModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="flex-[1.5] h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow border-0 font-bold tracking-tight"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {taskToEdit ? "Update Task" : "Create Task"}
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
+                {isSubmitting ? (taskToEdit ? "Updating..." : "Creating...") : (taskToEdit ? "Update Task" : "Create Task")}
               </Button>
             </div>
           </form>

@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { projects } from "@/lib/mock-data";
-import { Plus, MoreHorizontal, Search, FolderKanban, Pencil, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, FolderKanban, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AvatarStack } from "@/components/UserAvatar";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { useProjectModal } from "@/contexts/ProjectModalContext";
+import { useProjectStore } from "@/store/projectStore";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -20,6 +20,18 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 const Projects = () => {
   const { openProjectModal } = useProjectModal();
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const { projects, isLoading, fetchProjects, deleteProject } = useProjectStore();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  const handleDelete = async () => {
+    if (deleteProjectId) {
+      await deleteProject(deleteProjectId);
+      setDeleteProjectId(null);
+    }
+  };
 
   return (
     <AppLayout
@@ -32,7 +44,7 @@ const Projects = () => {
       subtitle="Organize, track and ship work across your team."
       action={
         <Button 
-          onClick={openProjectModal}
+          onClick={() => openProjectModal()}
           className="bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-glow h-11 px-5 rounded-xl transition-all font-bold"
         >
           <Plus className="h-4 w-4 mr-2" />Create project
@@ -49,98 +61,117 @@ const Projects = () => {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {projects.map((p) => {
-          const pct = Math.round((p.completedTasks / p.totalTasks) * 100);
-          return (
-            <div key={p.id} className="group relative">
-              <Link to={`/projects/${p.id}`} className="surface p-6 group-hover:shadow-glow transition-all duration-300 block relative cursor-pointer h-full">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-colors duration-500 opacity-50" style={{ background: `hsl(${p.color} / 0.1)` }} />
-                
-                <div className="flex items-start justify-between relative z-10">
-                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center font-display font-bold text-xl text-white shadow-inner border border-white/10"
-                    style={{ background: `linear-gradient(135deg, hsl(${p.color}), hsl(${p.color} / 0.5))` }}>
-                    {p.name.charAt(0)}
+      {isLoading && projects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 opacity-50">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground font-medium">Loading projects...</p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {projects.map((p) => {
+            const pct = p.progress || 0;
+            const themeColor = p.themeColor || "175 100% 50%";
+            return (
+              <div key={p.id} className="group relative">
+                <Link to={`/projects/${p.id}`} className="surface p-6 group-hover:shadow-glow transition-all duration-300 block relative cursor-pointer h-full">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-colors duration-500 opacity-50" style={{ background: `hsl(${themeColor} / 0.1)` }} />
+                  
+                  <div className="flex items-start justify-between relative z-10">
+                    <div className="h-12 w-12 rounded-2xl flex items-center justify-center font-display font-bold text-xl text-white shadow-inner border border-white/10"
+                      style={{ background: `linear-gradient(135deg, hsl(${themeColor}), hsl(${themeColor} / 0.5))` }}>
+                      {p.name.charAt(0)}
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-white/5 hover:bg-white/10 rounded-lg border border-white/5" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <MoreHorizontal className="h-4 w-4 text-white" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openProjectModal(p);
+                        }}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          <span>Update Project</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeleteProjectId(p.id);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete Project</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-white/5 hover:bg-white/10 rounded-lg border border-white/5" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <MoreHorizontal className="h-4 w-4 text-white" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openProjectModal(p);
-                      }}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Update Project</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        variant="destructive"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDeleteProjectId(p.id);
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete Project</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <h3 className="font-display text-xl font-bold mt-5 group-hover:text-glow transition-all relative z-10">{p.name}</h3>
-                <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 h-10 relative z-10">{p.description}</p>
-
-                <div className="mt-6 relative z-10">
-                  <div className="flex items-center justify-between text-xs font-medium mb-2">
-                    <span className="text-muted-foreground group-hover:text-white/80 transition-colors">{p.completedTasks}/{p.totalTasks} tasks</span>
-                    <span className="text-foreground tabular-nums bg-white/5 px-2 py-0.5 rounded-md border border-white/5">{pct}%</span>
+                  <h3 className="font-display text-xl font-bold mt-5 group-hover:text-glow transition-all relative z-10">{p.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 h-10 relative z-10">{p.description}</p>
+  
+                  <div className="mt-6 relative z-10">
+                    <div className="flex items-center justify-between text-xs font-medium mb-2">
+                      <span className="text-muted-foreground group-hover:text-white/80 transition-colors">{p.completedTasks || 0}/{p.totalTasks || 0} tasks</span>
+                      <span className="text-foreground tabular-nums bg-white/5 px-2 py-0.5 rounded-md border border-white/5">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-1.5 bg-white/5" />
                   </div>
-                  <Progress value={pct} className="h-1.5 bg-white/5" />
-                </div>
-
-                <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between relative z-10">
-                  <AvatarStack members={p.members} size="sm" max={4} />
-                  <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider group-hover:text-muted-foreground transition-colors">Updated 2h ago</span>
-                </div>
-              </Link>
+  
+                  <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between relative z-10">
+                    <AvatarStack 
+                      members={(p.members || []).map((m, idx) => ({
+                        id: `${p.id}-m-${idx}`,
+                        name: m.name,
+                        initials: m.name.charAt(0).toUpperCase(),
+                        color: themeColor,
+                        avatar: m.avatar || "",
+                        email: "",
+                        role: "Member"
+                      }))} 
+                      size="sm" 
+                      max={4} 
+                    />
+                    <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider group-hover:text-muted-foreground transition-colors">
+                      {p.updatedAt ? `Updated ${new Date(p.updatedAt).toLocaleDateString()}` : "New Project"}
+                    </span>
+                  </div>
+                </Link>
+              </div>
+            );
+          })}
+  
+          <button 
+            onClick={() => openProjectModal()}
+            className="surface p-6 border-dashed border-2 border-white/10 flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all min-h-[280px] bg-transparent hover:bg-white/[0.02] group"
+          >
+            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/5 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+              <Plus className="h-6 w-6 group-hover:text-primary transition-colors" />
             </div>
-          );
-        })}
-
-        <button 
-          onClick={openProjectModal}
-          className="surface p-6 border-dashed border-2 border-white/10 flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all min-h-[280px] bg-transparent hover:bg-white/[0.02] group"
-        >
-          <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/5 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-            <Plus className="h-6 w-6 group-hover:text-primary transition-colors" />
-          </div>
-          <p className="font-display font-bold text-lg text-foreground group-hover:text-glow transition-all">Create new project</p>
-          <p className="text-sm mt-1.5 text-center px-4">Start from scratch or choose a predefined template</p>
-        </button>
-      </div>
+            <p className="font-display font-bold text-lg text-foreground group-hover:text-glow transition-all">Create new project</p>
+            <p className="text-sm mt-1.5 text-center px-4">Start from scratch or choose a predefined template</p>
+          </button>
+        </div>
+      )}
 
       <ConfirmationModal
         isOpen={!!deleteProjectId}
         onClose={() => setDeleteProjectId(null)}
-        onConfirm={() => {
-          console.log("Deleting project:", deleteProjectId);
-          setDeleteProjectId(null);
-        }}
+        onConfirm={handleDelete}
         variant="danger"
         title="Delete Project"
         description="Are you sure you want to delete this project? All associated tasks and data will be permanently removed. This action cannot be undone."

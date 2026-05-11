@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import type { Task } from "@/lib/mock-data";
+import type { Task } from "@/types/task";
 
 type TaskModalContextType = {
   isCreateTaskOpen: boolean;
